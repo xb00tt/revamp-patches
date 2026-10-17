@@ -15,7 +15,7 @@ export const useBundledUi = definePatch({
   name: "Use the bundled UI",
   description:
     "Loads the UI that ships inside the release (the one Revamp patches) instead of the copy on Hydra's website, which can change without a release.",
-  compatibleWith: [{ app: hydra, versions: ["4.1.6"] }],
+  compatibleWith: [{ app: hydra, versions: ["4.1.6", "4.2.0"] }],
   execute(ctx) {
     const m = ctx.match(remoteUi);
     m.replace(`${m.$W}.loadFile(${m.$ARGS});`);

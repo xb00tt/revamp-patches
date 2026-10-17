@@ -42,7 +42,7 @@ export const similarGamesSettings = definePatch({
 });
 
 const dependsOn = [useBundledUi, hydraExtensionLoader, steamBridge, similarGamesRows, similarGamesSettings];
-const compatibleWith = [{ app: hydra, versions: ["4.1.6"] }];
+const compatibleWith = [{ app: hydra, versions: ["4.1.6", "4.2.0"] }];
 
 export const moreLikeThisSteam = definePatch({
   name: "More like this (Steam)",

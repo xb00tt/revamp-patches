@@ -11,7 +11,7 @@ export const dealsLink = fingerprint({
 export const hideDealsLink = definePatch({
   name: "Hide Deals link",
   description: "Removes the Deals link from Heroic's sidebar.",
-  compatibleWith: [{ app: heroic, versions: ["2.22.3"] }],
+  compatibleWith: [{ app: heroic, versions: ["2.22.3", "2.22.4"] }],
   execute(ctx) {
     ctx.match(dealsLink).replace("null"); // React renders nothing for null children
   },
