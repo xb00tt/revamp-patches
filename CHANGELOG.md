@@ -2,6 +2,10 @@
 
 Each `## <version>` section becomes the `changelog` field of `bundle.json` when that version is published.
 
+## 0.4.2
+
+- Hydra 4.2.0 and Heroic 2.22.4 are listed, so `revamp update` installs them without `--force`. Every patch applies to both unchanged. Hydra 4.1.6 and Heroic 2.22.3 stay listed.
+
 ## 0.4.1
 
 - The official patches moved to their own repo, xb00tt/revamp-patches, which Revamp 0.3.0 adds as its default source. The patches are the same as in 0.4.0.
