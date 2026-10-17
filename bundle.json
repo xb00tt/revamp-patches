@@ -1,9 +1,9 @@
 {
   "name": "Revamp official",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "minEngine": "0.2.0",
-  "created_at": "2026-10-17T19:58:57.876Z",
-  "changelog": "- The official patches moved to their own repo, xb00tt/revamp-patches, which Revamp 0.3.0 adds as its default source. The patches are the same as in 0.4.0.",
-  "download_url": "https://github.com/xb00tt/revamp-patches/releases/download/bundle-v0.4.1/official.mjs",
-  "sha256": "41be46bf4358246b46782d09b3a3e738b3ce67eadeeea6699b2ba9cb190ff0aa"
+  "created_at": "2026-10-17T21:05:37.408Z",
+  "changelog": "- Hydra 4.2.0 and Heroic 2.22.4 are listed, so `revamp update` installs them without `--force`. Every patch applies to both unchanged. Hydra 4.1.6 and Heroic 2.22.3 stay listed.",
+  "download_url": "https://github.com/xb00tt/revamp-patches/releases/download/bundle-v0.4.2/official.mjs",
+  "sha256": "88358b004b5cf0ab5333012264785b1b372f768f3b1cb3eca638e63ec6267ccb"
 }
