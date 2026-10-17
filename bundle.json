@@ -1,0 +1,9 @@
+{
+  "name": "Revamp official",
+  "version": "0.4.1",
+  "minEngine": "0.2.0",
+  "created_at": "2026-10-17T19:58:57.876Z",
+  "changelog": "- The official patches moved to their own repo, xb00tt/revamp-patches, which Revamp 0.3.0 adds as its default source. The patches are the same as in 0.4.0.",
+  "download_url": "https://github.com/xb00tt/revamp-patches/releases/download/bundle-v0.4.1/official.mjs",
+  "sha256": "41be46bf4358246b46782d09b3a3e738b3ce67eadeeea6699b2ba9cb190ff0aa"
+}
