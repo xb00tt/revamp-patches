@@ -42,7 +42,7 @@ export const libraryFilterOption = fingerprint({
 export const recentlyDownloadedSort = definePatch({
   name: "Recently downloaded sort",
   description: "Adds 'Recently downloaded' (newest download first) to the library and sidebar sort menus.",
-  compatibleWith: [{ app: hydra, versions: ["4.1.6"] }],
+  compatibleWith: [{ app: hydra, versions: ["4.1.6", "4.2.0"] }],
   dependsOn: [useBundledUi, hydraLocales], // edits the bundled renderer (loaded only with useBundledUi) and uses locale keys
   execute(ctx) {
     const sort = ctx.match(librarySortSwitch);

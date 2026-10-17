@@ -10,7 +10,7 @@ import { sideBySideIdentity } from "./universal/side-by-side-identity.ts";
 
 export const manifest: Manifest = {
   name: "Revamp official",
-  version: "0.4.1",
+  version: "0.4.2",
   minEngine: "0.2.0", // Hydra locales uses Match.resolve()
   author: "xb00tt",
   license: "GPL-3.0-only",
