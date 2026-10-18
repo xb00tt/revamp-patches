@@ -8,10 +8,10 @@ revamp-patches is the official bundle for [Revamp](https://github.com/xb00tt/rev
 
 ## Commands
 
-Node 26 (`~/.local/node-26`) is installed per-user only; every command needs it first (`.npmrc` has `engine-strict=true`):
+Node 26 (`~/.local/node26`) is installed per-user only; every command needs it first (`.npmrc` has `engine-strict=true`):
 
 ```bash
-export PATH="$HOME/.local/node-26/bin:$PATH"
+export PATH="$HOME/.local/node26/bin:$PATH"
 npm test                                    # all unit tests (node --test, TS runs natively, no network)
 npm run typecheck                           # two tsc --noEmit projects: the repo and the TSX extension
 node --test test/patches.test.ts                                   # one test file
