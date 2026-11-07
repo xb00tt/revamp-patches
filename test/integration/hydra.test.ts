@@ -11,19 +11,40 @@ import { patchApp, revampPaths } from "@revamp-app/engine";
 const BUNDLE = fileURLToPath(new URL("../../dist/official.mjs", import.meta.url));
 const enabled = process.env.REVAMP_INTEGRATION === "1";
 
-/** Each listed Hydra version with the SHA-256 of two Big Picture slices of the stock renderer that no patch may touch. */
-const HYDRA: Record<string, { useSimilarGames: string; contentSettingsSection: string }> = {
+/** A slice of the stock renderer that no patch may touch: from, to, and the SHA-256 of the stock text. */
+type Slice = [from: string, to: string, sha256: string];
+const USE_SIMILAR_GAMES = ["const useSimilarGames = /* @__PURE__ */ __name((query) => {", '}, "useSimilarGames");'] as const;
+
+/**
+ * Each listed Hydra version: the main process's local UI load once patched, and two slices that must stay stock (the
+ * similar games hook, which the extension replaces at runtime only, and Big Picture's ContentSettingsSection). 4.4.0 is
+ * minified (the renderer) and obfuscated (the main process), so its texts differ.
+ */
+const HYDRA: Record<string, { localUi: string; untouched: Slice[] }> = {
   "4.1.6": {
-    useSimilarGames: "d086a5148f741eef8a3bde65ec1521bcd632206267dc5e4b00200d32510b7e09",
-    contentSettingsSection: "102baec72c8ac3e56136f52aa74d6470d909ce0f1a2530f6172f9a2b1e042c07",
+    localUi: 'loadFile(path.join(__dirname, "../renderer/index.html")',
+    untouched: [
+      [...USE_SIMILAR_GAMES, "d086a5148f741eef8a3bde65ec1521bcd632206267dc5e4b00200d32510b7e09"],
+      ["function ContentSettingsSection(", "\n}\n", "102baec72c8ac3e56136f52aa74d6470d909ce0f1a2530f6172f9a2b1e042c07"],
+    ],
   },
   "4.2.0": {
-    useSimilarGames: "d086a5148f741eef8a3bde65ec1521bcd632206267dc5e4b00200d32510b7e09",
-    contentSettingsSection: "c2cfd3c564e9928fb77dcf6acac2cfe3ecb47f1f62e07d726d038bba5388c6a8",
+    localUi: 'loadFile(path.join(__dirname, "../renderer/index.html")',
+    untouched: [
+      [...USE_SIMILAR_GAMES, "d086a5148f741eef8a3bde65ec1521bcd632206267dc5e4b00200d32510b7e09"],
+      ["function ContentSettingsSection(", "\n}\n", "c2cfd3c564e9928fb77dcf6acac2cfe3ecb47f1f62e07d726d038bba5388c6a8"],
+    ],
+  },
+  "4.4.0": {
+    localUi: "process.env.ELECTRON_RENDERER_URL+'#/'+oS);else ot[b03(0xb35)](K[b03(0x387c)](__dirname,b03(0x1280)), { hash: oS });",
+    untouched: [
+      ["hAe=e=>{", "isEligible:m}}", "f857b5be6cb5b21c280158479212a61fb7f35b4ff6cef0f524e658801b2bfe7e"],
+      ["function a0a({className:e}){", "onConfirm:f})]})}", "9fa16918bd4a14b7be52eda7b66d47f4d15a8088c5099dd30dbe190973e4aa9a"],
+    ],
   },
 };
 
-for (const [version, bigPicture] of Object.entries(HYDRA)) {
+for (const [version, { localUi, untouched }] of Object.entries(HYDRA)) {
   test(
     `patch the real Hydra ${version} release into a throwaway home`,
     { skip: enabled ? false : "set REVAMP_INTEGRATION=1 (npm run test:integration)", timeout: 15 * 60_000 },
@@ -79,7 +100,7 @@ for (const [version, bigPicture] of Object.entries(HYDRA)) {
       // Release builds load their UI from Hydra's website unless patched; the renderer edits live in the bundled copy.
       const main = extractFile(asar, "out/main/index.js").toString();
       assert.equal(main.includes("hydra-eqi.pages.dev"), false);
-      assert.ok(main.includes('loadFile(path.join(__dirname, "../renderer/index.html")'));
+      assert.ok(main.includes(localUi));
       for (const f of ["node_modules/electron-updater/out/AppUpdater.js", "node_modules/electron-updater/out/AppImageUpdater.js"]) {
         assert.match(extractFile(asar, f).toString(), /isUpdaterActive\(\) \{\s*return false;\s*\}/, f);
       }
@@ -91,9 +112,9 @@ for (const [version, bigPicture] of Object.entries(HYDRA)) {
       assert.equal(patched[0].match(/"recently_downloaded"/g)?.length, 5);
       assert.equal(patched[0].match(/"recently_added"/g)?.length, 5);
       for (const strings of [
-        '"sort_recently_downloaded": "Recently downloaded", "sort_recently_added": "Recently added" };',
-        '"sort_recently_downloaded": "Наскоро изтеглени", "sort_recently_added": "Наскоро добавени" };',
-        '"sort_recently_downloaded": "Baixados recentemente", "sort_recently_added": "Adicionados recentemente" };',
+        '"sort_recently_downloaded": "Recently downloaded", "sort_recently_added": "Recently added"',
+        '"sort_recently_downloaded": "Наскоро изтеглени", "sort_recently_added": "Наскоро добавени"',
+        '"sort_recently_downloaded": "Baixados recentemente", "sort_recently_added": "Adicionados recentemente"',
       ]) {
         assert.equal(patched[0].split(strings).length, 2, strings);
       }
@@ -105,30 +126,25 @@ for (const [version, bigPicture] of Object.entries(HYDRA)) {
       assert.ok(html.includes('<script type="module" crossorigin src="./assets/revamp-hydra.js"></script>'));
       assert.ok(html.indexOf("./assets/revamp-hydra.js") < html.indexOf('<script type="module" crossorigin src="./assets/index-'));
       assert.equal(patched[0].split("Object.assign((globalThis.__revamp ??= { registry: {}, mounts: {} }).registry, {").length, 6);
-      assert.ok(/registry, \{ [^\n]* \}\);\nconst __revampSimilarGamesSettings [^\n]*\n(\(globalThis[^\n]*registry\.similarGames\w+ = true;\n){2}ReactDOM\$1\.createRoot\(document\.getElementById\("root"\)\)/.test(patched[0]));
-      assert.equal(patched[0].split('SimilarGames = globalThis.__revamp?.mount?.("hydra.similarGames", SimilarGames) ?? SimilarGames;').length, 2);
+      assert.ok(/registry, \{ [^\n]* \}\);\nconst __revampSimilarGamesSettings [^\n]*\n(\(globalThis[^\n]*registry\.similarGames\w+ = true;\n){2}[\w$]+\.createRoot\(document\.getElementById\("root"\)\)/.test(patched[0]));
+      assert.equal(patched[0].match(/\n([\w$]+) = globalThis\.__revamp\?\.mount\?\.\("hydra\.similarGames", \1\) \?\? \1;/g)?.length, 1);
 
       // The Steam bridge runs in the main process and the preload; the settings slot is mounted once.
-      assert.equal(main.split("__revampSteamBridge.registerSteamBridge(registerEvent, logger);").length, 2);
-      assert.ok(
-        extractFile(asar, "out/preload/index.mjs").toString().includes('revampGetSteamRecommendations: (objectId) => ipcRenderer.invoke("revamp:getSteamRecommendations", objectId)'),
-      );
-      assert.equal(patched[0].split("jsxRuntimeExports.jsx(__revampSimilarGamesSettings, {})").length, 2);
+      assert.equal(main.split("__revampSteamBridge.registerSteamBridge((name, listener) => __revampIpcMain.handle(name, listener), ").length, 2);
+      const preload = extractFile(asar, "out/preload/index.mjs").toString();
+      assert.equal(preload.split('.exposeInMainWorld("revampSteam", {').length, 2);
+      assert.ok(preload.includes('.invoke("revamp:getSteamRecommendations", objectId)'));
+      assert.equal(patched[0].split(".jsx(__revampSimilarGamesSettings, {})").length, 2);
       assert.ok(patched[0].includes("similarGamesSteam = true") && patched[0].includes("similarGamesRevamped = true"));
 
-      // Big Picture's copies of the stock code are untouched.
-      const slice = (from: string, to: string) => {
+      // The stock similar games hook and Big Picture's settings are untouched.
+      for (const [from, to, sha256] of untouched) {
         const i = patched[0].indexOf(from);
         assert.ok(i >= 0, from);
         const j = patched[0].indexOf(to, i);
         assert.ok(j >= 0, to);
-        return createHash("sha256").update(patched[0].slice(i, j + to.length)).digest("hex");
-      };
-      assert.equal(
-        slice("const useSimilarGames = /* @__PURE__ */ __name((query) => {", '}, "useSimilarGames");'),
-        bigPicture.useSimilarGames,
-      );
-      assert.equal(slice("function ContentSettingsSection(", "\n}\n"), bigPicture.contentSettingsSection);
+        assert.equal(createHash("sha256").update(patched[0].slice(i, j + to.length)).digest("hex"), sha256, from);
+      }
 
       // Files the patches didn't touch must be byte-identical: their bytes still match the header's original hashes.
       const sample: Array<[string, string]> = [];

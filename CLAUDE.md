@@ -25,7 +25,7 @@ npm run release                             # owner only: GitHub release bundle-
 
 - Always pass `--bundle dist/official.mjs` while developing. Without it the CLI uses the bundle pinned by the user's sources (and on a fresh home first seeds the default source, this repo's released `bundle.json`), so a rebuild changes nothing.
 - The integration tests use `dist/official.mjs` directly; `npm run test:integration` rebuilds it first.
-- The integration tests (`REVAMP_INTEGRATION=1`) reuse the real download cache `~/.cache/revamp/releases`: Hydra 4.1.6 and 4.2.0, Heroic 2.22.3 and 2.22.4, and Hydra 4.0.6 forced as the deliberate mismatch. Without the cache that is about 740 MB of downloads. With it, a run takes about two minutes.
+- The integration tests (`REVAMP_INTEGRATION=1`) reuse the real download cache `~/.cache/revamp/releases`: Hydra 4.1.6, 4.2.0 and 4.4.0, Heroic 2.22.3 and 2.22.4, and Hydra 4.0.6 forced as the deliberate mismatch. Without the cache that is about 920 MB of downloads. With it, a run takes a few minutes.
 - Passing tests install nothing for the owner: integration runs use temp homes.
 - The forced Hydra 4.0.6 test calls api.github.com unauthenticated (60 requests/hour); HTTP 403 there means wait and rerun.
 - Inspect a real build in a scratch dir: `dpkg-deb --fsys-tarfile <cached .deb> | tar -x`, then `extractFile` from `@electron/asar` (repo node_modules). Never eval app code; parse with acorn or regex.
@@ -63,7 +63,8 @@ A bundle release is `npm run release`, by the owner, by hand:
 - Never identify a language by translated text ("Most played" appears in 23 Hydra locales). Hydra locales walks `resources` → locale → `library` namespace with `resolve()`.
 - Hydra's main process has its own copy of the translations, hence the `where: in the renderer` check.
 - Hydra release builds load their UI from the web unless the "Use the bundled UI" patch applies, so every Hydra renderer patch depends on it.
-- Test fixtures (`test/fixtures/<app>-<version>/`) are trimmed excerpts of the real built files, decoys included.
+- Hydra 4.4.0 on ships a minified renderer and an obfuscated main process and preload (javascript-obfuscator: most strings and member names become `a5c(0x…)` lookups, differently in every build). A pattern can't express one declaration of a comma list (`const a=…,b=…`), so match the expression and read names from where it is used (`initializerOf` in `registry.ts` for local ones); in the main process and preload anchor on `import` statements, which the obfuscator leaves alone, or on structure (`$W[$M](…)`). Where the old and new shapes differ, a patch tries the old fingerprint, then the new one.
+- Test fixtures (`test/fixtures/<app>-<version>/`) are trimmed excerpts of the real built files, decoys included. Hydra 4.4.0's are minified: each declaration of a comma list is its own statement there.
 
 ## Constraints
 

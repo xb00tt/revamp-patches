@@ -15,7 +15,7 @@ export const LIBRARY_STRINGS: Record<string, Record<string, string>> = {
 export const localeResources = fingerprint({
   name: "i18n resources",
   strings: ['"pt-BR"'],
-  pattern: 'const $RESOURCES = { "pt-BR": $PT_BR, en: $EN, bg: $BG }',
+  pattern: '({ "pt-BR": $PT_BR, en: $EN, bg: $BG })', // the object, not its declaration: minified builds join declarations
   where: {
     "in the renderer": (m) => m.file.startsWith("out/renderer/"),
     "values are locale objects": (m) => [m.$PT_BR, m.$EN, m.$BG].every((c) => c.node?.type === "Identifier"),

@@ -9,47 +9,44 @@ export const STEAM_BRIDGE =
     ? __REVAMP_HYDRA_STEAM_BRIDGE__
     : "var __revampSteamBridge = { registerSteamBridge() {} }; // Revamp Steam bridge (not built)\n";
 
-export const ipcRegistration = fingerprint({
-  name: "IPC handler registration",
-  strings: ["ipcMain.handle(", "JSON.parse(JSON.stringify("],
-  pattern: "const $REGISTER = ($NAME, $LISTENER) => { $IPC.handle($NAME, $$$); }",
-});
+/** The window object the preload exposes the bridge as (window.revampSteam). */
+export const PRELOAD_WORLD_KEY = "revampSteam";
 
-export const mainLogger = fingerprint({
-  name: "main logger",
-  strings: ['.scope("main")'],
-  pattern: 'const $LOGGER = $LOG.scope("main")',
+// Import statements are the anchors: an obfuscated build (4.4.0 on) hides strings and member names, never imports.
+export const mainLogImport = fingerprint({
+  name: "main process electron-log import",
+  strings: ["electron-log"],
+  pattern: 'import $LOG from "electron-log"',
   where: { "in the main process": (m) => m.file.startsWith("out/main/") },
 });
 
-export const preloadApi = fingerprint({
-  name: "preload electron API",
-  strings: ['exposeInMainWorld("electron"', '"getUserPreferences"'],
-  pattern: '$BRIDGE.exposeInMainWorld("electron", { getUserPreferences: () => $IPC.invoke("getUserPreferences") })',
+export const preloadElectronImport = fingerprint({
+  name: "preload electron import",
+  strings: ["contextBridge", "ipcRenderer"],
+  pattern: 'import { contextBridge as $BRIDGE, ipcRenderer as $IPC } from "electron"',
+  where: { "in the preload": (m) => m.file.startsWith("out/preload/") },
 });
 
 /**
  * Internal "Steam bridge": Steam data for the More like this patches, fetched in Hydra's main process (the renderer
- * can't reach Steam) and exposed to the renderer through two preload functions.
+ * can't reach Steam) and exposed to the renderer as window.revampSteam.
  */
 export const steamBridge = definePatch({
   description: "Steam bridge",
   execute(ctx) {
-    const reg = ctx.match(ipcRegistration);
-    const logger = ctx.match(mainLogger);
-    if (reg.file !== logger.file || logger.start >= reg.start) {
-      throw new Error(
-        `the main logger (${logger.file}:${logger.line}) must be declared before registerEvent (${reg.file}:${reg.line})`,
-      );
-    }
-    reg.insertAfter(`${STEAM_BRIDGE}\n__revampSteamBridge.registerSteamBridge(${reg.$REGISTER}, ${logger.$LOGGER});`);
+    // Imports are evaluated before the module body and ipcMain works before the app is ready, so this can run first.
+    const log = ctx.match(mainLogImport);
+    log.insertAfter(
+      `import { ipcMain as __revampIpcMain } from "electron";\n${STEAM_BRIDGE}\n` +
+        `__revampSteamBridge.registerSteamBridge((name, listener) => __revampIpcMain.handle(name, listener), ${log.$LOG}.scope("main"));`,
+    );
 
-    const api = ctx.match(preloadApi);
-    api.find(`getUserPreferences: () => ${api.$IPC}.invoke("getUserPreferences")`).insertAfter(
-      [
-        `revampGetSteamAppTags: (objectId) => ${api.$IPC}.invoke("revamp:getSteamAppTags", objectId)`,
-        `revampGetSteamRecommendations: (objectId) => ${api.$IPC}.invoke("revamp:getSteamRecommendations", objectId)`,
-      ].join(", "),
+    const preload = ctx.match(preloadElectronImport);
+    preload.insertAfter(
+      `${preload.$BRIDGE}.exposeInMainWorld(${JSON.stringify(PRELOAD_WORLD_KEY)}, {\n` +
+        `  getSteamAppTags: (objectId) => ${preload.$IPC}.invoke("revamp:getSteamAppTags", objectId),\n` +
+        `  getSteamRecommendations: (objectId) => ${preload.$IPC}.invoke("revamp:getSteamRecommendations", objectId),\n` +
+        `});`,
     );
   },
 });

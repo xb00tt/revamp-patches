@@ -7,6 +7,15 @@ import { EXTENSION_FILE, HYDRA_EXTENSION } from "../src/hydra/extension-loader.t
 import { STEAM_BRIDGE } from "../src/hydra/steam-bridge.ts";
 import * as bundle from "../src/index.ts";
 
+/** What the Steam bridge inserts after the main process's electron-log import and after the preload's electron import. */
+const STEAM_BRIDGE_MAIN = (log: string) =>
+  `import { ipcMain as __revampIpcMain } from "electron";\n${STEAM_BRIDGE}\n` +
+  `__revampSteamBridge.registerSteamBridge((name, listener) => __revampIpcMain.handle(name, listener), ${log}.scope("main"));`;
+const STEAM_BRIDGE_PRELOAD = (bridge: string, ipc: string) =>
+  `${bridge}.exposeInMainWorld("revampSteam", {\n` +
+  `  getSteamAppTags: (objectId) => ${ipc}.invoke("revamp:getSteamAppTags", objectId),\n` +
+  `  getSteamRecommendations: (objectId) => ${ipc}.invoke("revamp:getSteamRecommendations", objectId),\n});`;
+
 /** The Hydra versions with trimmed fixtures in test/fixtures/hydra-<version>/, each with the name of its renderer chunk. */
 const HYDRA: Record<string, string> = { "4.1.6": "index-Cpo9haoY.js", "4.2.0": "index-BIk6Ma3f.js" };
 
@@ -108,7 +117,8 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
     assert.match(code, /case "recently_downloaded": \{\s*const difference = \(b2\.download\?\.timestamp \?\? 0\) - \(a2\.download\?\.timestamp \?\? 0\);/);
     assert.ok(
       code.includes(
-        '{ value: "recently_downloaded", label: t2("sort_recently_downloaded", { ns: "library" }), icon: jsxRuntimeExports.jsx(DownloadIcon, { size: 14 }) }',
+        '{ value: "recently_downloaded", label: t2("sort_recently_downloaded", { ns: "library" }), icon: jsxRuntimeExports.jsx(globalThis.__revampDownloadIcon ??= ' +
+          'createIconComponent("DownloadIcon", "octicon octicon-download", function() {\n  return {};\n}), { size: 14 }) }',
       ),
     );
     assert.ok(code.includes('{ value: "recently_downloaded", label: t2("sort_recently_downloaded") }'));
@@ -181,9 +191,11 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
   test("Recently added sort edits the same five places; menus read played, added, downloaded", () => {
     const code = job().outputs.get(RENDERER)!.toString();
     assert.equal(code.match(/"recently_added"/g)?.length, 5);
-    assert.ok(code.includes('{ value: "recently_added", label: t2("sort_recently_added", { ns: "library" }), icon: jsxRuntimeExports.jsx(CalendarIcon$revamp, { size: 14 }) }'));
     assert.ok(code.includes('{ value: "recently_added", label: t2("sort_recently_added") }'));
-    assert.match(code, /var CalendarIcon\$revamp = createIconComponent\("CalendarIcon", "octicon octicon-calendar", function\(\) \{\n  return \{ "16": \{ "width": 16, "path": jsxRuntimeExports\.jsx\("path", \{ d: "M4\.75 0a/);
+    assert.match(
+      code,
+      /\{ value: "recently_added", label: t2\("sort_recently_added", \{ ns: "library" \}\), icon: jsxRuntimeExports\.jsx\(globalThis\.__revampCalendarIcon \?\?= createIconComponent\("CalendarIcon", "octicon octicon-calendar", function\(\) \{\n  return \{ "16": \{ "width": 16, "path": jsxRuntimeExports\.jsx\("path", \{ d: "M4\.75 0a[^"]*" \}\) \} \};\n\}\), \{ size: 14 \}\) \}/,
+    );
     for (const list of [/"recently_played",\s*"recently_added",\s*"recently_downloaded",\s*"most_played"/g, /value: "recently_played"[^]*?value: "recently_added"[^]*?value: "recently_downloaded"[^]*?value: "most_played"/g]) {
       assert.equal(code.match(list)?.length, 2, String(list));
     }
@@ -272,7 +284,7 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
       ),
       REGISTRY("levelDBService: levelDBService, orderBy: orderBy$1, logger: logger"),
       REGISTRY("useLibrary: useLibrary$1, useAppDispatch: useAppDispatch$1, useAppSelector: useAppSelector$1"),
-      REGISTRY("setTags: catalogueSearchSlice.actions.setTags, getLocalizedSteamMetadata: getLocalizedSteamMetadata"),
+      REGISTRY("setTags: setTags, getLocalizedSteamMetadata: getLocalizedSteamMetadata"),
       REGISTRY("CheckboxField: CheckboxField"),
     ];
     for (const line of registry) assert.ok(code.includes(line), line);
@@ -294,17 +306,9 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
     assert.ok(code.indexOf(slot) > code.indexOf('label: t2("persist_filters_and_sorting"),'));
     const decoy = (s: string) => s.slice(s.indexOf("function ContentSettingsSection("), s.indexOf("  return items;\n}"));
     assert.equal(decoy(code), decoy(fixture("more-like-this-excerpt.js")));
-    // The Steam bridge: main process handlers after registerEvent, two functions in the preload.
-    assert.ok(
-      out.outputs.get("out/main/index.js")!.toString().includes(
-        "return JSON.parse(JSON.stringify(result));\n        });\n    });\n};\n" + STEAM_BRIDGE + "\n__revampSteamBridge.registerSteamBridge(registerEvent, logger);",
-      ),
-    );
-    assert.ok(
-      out.outputs.get("out/preload/index.mjs")!.toString().includes(
-        'getUserPreferences: () => ipcRenderer.invoke("getUserPreferences"), revampGetSteamAppTags: (objectId) => ipcRenderer.invoke("revamp:getSteamAppTags", objectId), revampGetSteamRecommendations: (objectId) => ipcRenderer.invoke("revamp:getSteamRecommendations", objectId),',
-      ),
-    );
+    // The Steam bridge: main process handlers after the electron-log import, window.revampSteam from the preload.
+    assert.ok(out.outputs.get("out/main/index.js")!.toString().includes(STEAM_BRIDGE_MAIN("log")));
+    assert.ok(out.outputs.get("out/preload/index.mjs")!.toString().includes(STEAM_BRIDGE_PRELOAD("contextBridge", "ipcRenderer")));
   });
 
   test("only Steam: one marker, the same shared patches", () => {
@@ -368,5 +372,95 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
     assert.equal(data.status, "failed");
     assert.match(data.message!, /registry entry logger \(logger\) is declared after the root render/);
     assert.equal(out.results.find((x) => x.name === "More like this (Revamped)")!.status, "skipped");
+  });
+});
+
+/** Hydra 4.4.0 ships minified renderer code and an obfuscated main process and preload: the same patches, other shapes. */
+describe("Hydra 4.4.0", () => {
+  const fixture = (name: string) => readFileSync(new URL(`./fixtures/hydra-4.4.0/${name}`, import.meta.url), "utf8");
+  const RENDERER = "out/renderer/assets/index-B2nSRQJo.js";
+  const LOCALES = "out/renderer/assets/locales-excerpt.js"; // in the real release these are part of RENDERER
+  const MORE_LIKE_THIS = "out/renderer/assets/more-like-this-excerpt.js";
+  const STOCK = { Name: "Hydra", Exec: "/opt/Hydra/hydralauncher %U", MimeType: "x-scheme-handler/hydralauncher;" };
+  const files = () => ({
+    "package.json": '{\n  "name": "hydralauncher",\n  "version": "4.4.0",\n  "main": "./out/main/index.js",\n  "type": "module"\n}\n',
+    "out/main/index.js": fixture("main-excerpt.js"),
+    [RENDERER]: fixture("renderer-excerpt.js"),
+    [LOCALES]: fixture("locales-excerpt.js"),
+    [MORE_LIKE_THIS]: fixture("more-like-this-excerpt.js"),
+    "out/renderer/index.html": fixture("index.html"),
+    "out/preload/index.mjs": fixture("preload-excerpt.mjs"),
+    "node_modules/electron-updater/out/AppUpdater.js": fixture("AppUpdater-excerpt.js"),
+    "node_modules/electron-updater/out/AppImageUpdater.js": fixture("AppImageUpdater-excerpt.js"),
+  });
+  const NONE: Selection = { enable: [], disable: [], options: {} };
+  const job = (selection = NONE) =>
+    runJob(bundle, { appId: "hydra", version: "4.4.0", selection, force: false, stockDesktop: STOCK }, memoryStore(files()));
+  const out = job();
+  const text = (file: string) => out.outputs.get(file)!.toString();
+
+  test("every Hydra patch applies to the Hydra 4.4.0 excerpts", () => {
+    assert.equal(out.aborted, undefined);
+    assert.deepEqual(out.results.filter((r) => r.status !== "applied").map((r) => [r.name, r.message]), []);
+    assert.equal(out.results.length, 17);
+  });
+
+  test("Use the bundled UI replaces the obfuscated remote load with its local fallback", () => {
+    const main = text("out/main/index.js");
+    assert.ok(main.includes("+'#/'+oS);else ot[b03(0xb35)](K[b03(0x387c)](__dirname,b03(0x1280)), { hash: oS });}}"));
+    assert.equal(main.includes("try{"), false);
+  });
+
+  test("claimLinks=false stops the obfuscated protocol registration", () => {
+    const main = job({ ...NONE, options: { "Side-by-side identity": { claimLinks: false } } }).outputs.get("out/main/index.js")!.toString();
+    assert.ok(main.includes("process[a5c(0x29ab)]?process[a5c(0x2941)][a5c(0x1faf)]>=0x2&&false:false;"));
+  });
+
+  test("the Steam bridge anchors on the import statements the obfuscator leaves alone", () => {
+    assert.ok(text("out/main/index.js").includes(`import bh from'electron-log';\n${STEAM_BRIDGE_MAIN("bh")}\nprocess[`));
+    assert.ok(text("out/preload/index.mjs").includes(`import{contextBridge as e,ipcRenderer as f}from'electron';\n${STEAM_BRIDGE_PRELOAD("e", "f")}\ne[z(0xe3)]`));
+  });
+
+  test("the sorts edit the five minified places each and leave Big Picture's filters alone", () => {
+    const code = text(RENDERER);
+    assert.equal(code.match(/"recently_added"/g)?.length, 5);
+    assert.equal(code.match(/"recently_downloaded"/g)?.length, 5);
+    assert.match(code, /case "recently_downloaded": \{\s*const difference = \(a\.download\?\.timestamp \?\? 0\) - \(n\.download\?\.timestamp \?\? 0\);/);
+    assert.ok(code.includes('icon: s.jsx(globalThis.__revampDownloadIcon ??= Kt("DownloadIcon","octicon octicon-download",function(){return{}}), { size: 14 }) }'));
+    assert.ok(code.includes('icon: s.jsx(globalThis.__revampCalendarIcon ??= Kt("CalendarIcon", "octicon octicon-calendar", function() {'));
+    assert.ok(code.includes('new Set(["title_asc","recently_played", "recently_added", "recently_downloaded","most_played","achievements"])'));
+    const decoy = 'const aT=[{value:"recently_played",label:"Recent",focusId:D$e},{value:"favorites",label:"Favorites",focusId:z$e}];';
+    assert.ok(code.includes(decoy));
+  });
+
+  test("Hydra locales finds the minified resources and edits en, bg and pt-BR only", () => {
+    const code = text(LOCALES);
+    const line = (name: string) => code.split("\n").find((l) => l.startsWith(`const ${name}=`))!;
+    assert.ok(line("XXt").endsWith(`, "sort_recently_downloaded": "Recently downloaded", "sort_recently_added": "Recently added"};`));
+    assert.ok(line("mun").endsWith(`, "sort_recently_downloaded": "Наскоро изтеглени", "sort_recently_added": "Наскоро добавени"};`));
+    assert.ok(line("iQt").endsWith(`, "sort_recently_downloaded": "Baixados recentemente", "sort_recently_added": "Adicionados recentemente"};`));
+    assert.equal(line("mnn"), fixture("locales-excerpt.js").split("\n").find((l) => l.startsWith("const mnn=")));
+  });
+
+  test("the registry names the minified internals; the rows and the settings slot mount where 4.2.0's do", () => {
+    const code = text(MORE_LIKE_THIS);
+    const REGISTRY = (entries: string) => `Object.assign((globalThis.__revamp ??= { registry: {}, mounts: {} }).registry, { ${entries} });`;
+    for (const line of [
+      REGISTRY(
+        "React: c, jsxRuntime: s, useNavigate: An, useTranslation: me, useEmblaCarousel: Jv, VerticalCoverCard: BTe, " +
+          "buildGameDetailsPath: Ei, ChevronLeftIcon: k0, ChevronRightIcon: Po, Skeleton: fn",
+      ),
+      REGISTRY("levelDBService: fa, orderBy: us, logger: wt"),
+      REGISTRY("useLibrary: Do, useAppDispatch: ii, useAppSelector: Gt"),
+      REGISTRY("setTags: r6t, getLocalizedSteamMetadata: Y0e"),
+      REGISTRY("CheckboxField: _n"),
+    ]) {
+      assert.ok(code.includes(line), line);
+      assert.ok(code.indexOf(line) < code.indexOf("Oat.createRoot("), line);
+    }
+    assert.ok(code.includes('\nSSn = globalThis.__revamp?.mount?.("hydra.similarGames", SSn) ?? SSn;'));
+    assert.ok(code.includes("onChange:()=>v({persistFiltersAndSorting:!u.persistFiltersAndSorting})}), s.jsx(__revampSimilarGamesSettings, {})]})"));
+    const decoy = (s: string) => s.split("\n").find((l) => l.startsWith("function Iha("));
+    assert.equal(decoy(code), decoy(fixture("more-like-this-excerpt.js")));
   });
 });

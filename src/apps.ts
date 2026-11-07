@@ -12,6 +12,7 @@ export const hydra = defineApp({
   versions: {
     "4.1.6": { sha256: "fc075d4c9334fa7462cdfe4faef625f61e6933df48fa03e1939b635951147363" },
     "4.2.0": { sha256: "3982e1ba4026f436378b54bce831f0dd340833b574325950a7dbf03c363b215a" },
+    "4.4.0": { sha256: "7d27db73e8390afd05b59c2c10da56082b2287ce7a95f68c655861a500c75df6" },
   },
   required: [disableSelfUpdate, sideBySideIdentity],
 });
