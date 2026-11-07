@@ -1,0 +1,11 @@
+// Excerpts from Hydra 4.4.0 out/renderer/assets/index-B2nSRQJo.js (MIT, github.com/hydralauncher/hydra), minified;
+// each declaration of a comma list is its own statement here. Trimmed for Revamp's patch tests: the sorts. The last block is a decoy (Big Picture's filters).
+const hq=(e,t)=>[...e].sort((n,a)=>{switch(t){case"recently_played":{const i=R8t(n,a);if(i!==0)return i;break}case"most_played":{const i=N8t(n,a);if(i!==0)return i;break}case"achievements":{const i=D8t(n,a);if(i!==0)return i;break}case"installed_first":{const i=M8t(n,a);if(i!==0)return i;break}case"title_desc":return Nde(n,a,!1)}return Nde(n,a)});
+var fi=Kt("ClockIcon","octicon octicon-clock",function(){return{}});
+var li=Kt("DownloadIcon","octicon octicon-download",function(){return{}});
+function Ejt({sortBy:n}){const{t:f}=me(["sidebar","library"]),b=[{value:"title_asc",label:f("sort_title",{ns:"library"}),icon:s.jsx(fJ,{size:14})},{value:"recently_played",label:f("recently_played",{ns:"library"}),icon:s.jsx(fi,{size:14})},{value:"most_played",label:f("sort_most_played",{ns:"library"}),icon:s.jsx($St,{size:14})},{value:"achievements",label:f("sort_achievements",{ns:"library"}),icon:s.jsx(_o,{size:14})}];return b}
+const eLt=new Set(["title_asc","recently_played","most_played","achievements"]);
+function bPn({sortBy:e,onSortChange:t}){const{t:n}=me("library");return s.jsxs("div",{className:"library-filter-options__container",children:[s.jsx("span",{className:"library-filter-options__label",children:n("sort_by")}),s.jsx(yPn,{value:e,ariaLabel:n("sort_by"),onChange:a=>t(a),options:[{value:"title_asc",label:n("sort_title_asc")},{value:"recently_played",label:n("recently_played")},{value:"most_played",label:n("sort_most_played")},{value:"achievements",label:n("sort_achievements")},{value:"installed_first",label:n("sort_installed_first")},{value:"title_desc",label:n("sort_title_desc")}]})]})}
+const NPn=["title_asc","recently_played","most_played","achievements","installed_first","title_desc"];
+const lSt=["library-sort-by","library-category","library-collection",aR,Cq,Aq,"sidebar-category","sidebar-sort-by"];
+const aT=[{value:"recently_played",label:"Recent",focusId:D$e},{value:"favorites",label:"Favorites",focusId:z$e}];

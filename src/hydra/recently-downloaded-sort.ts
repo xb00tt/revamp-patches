@@ -9,10 +9,14 @@ export const librarySortSwitch = fingerprint({
   pattern: '[...$GAMES].sort(($A, $B) => { switch ($BY) { case "recently_played": { $$$ } } $$$ })',
 });
 
+/**
+ * The call that creates Octicons' DownloadIcon. Minified builds declare it in a comma list, where a pattern can't
+ * reach the name, so the patches create their own icon components with the same factory, once, at first render.
+ */
 export const octiconDownload = fingerprint({
   name: "octicon DownloadIcon",
   strings: ['"octicon octicon-download"'],
-  pattern: 'var $ICON = $CREATE("DownloadIcon", "octicon octicon-download", $$$)',
+  pattern: '$CREATE("DownloadIcon", "octicon octicon-download", $$$)',
 });
 
 export const sidebarSortEntry = fingerprint({
@@ -30,7 +34,7 @@ export const sidebarSortSet = fingerprint({
 export const librarySortList = fingerprint({
   name: "library allowed sorts",
   strings: ['"recently_played"', '"library-sort-by"'],
-  pattern: 'const $OPTS = [$$$, "recently_played", $$$]',
+  pattern: '[$$$, "recently_played", $$$, "installed_first", $$$]', // the sidebar's list has no "installed_first"
 });
 
 export const libraryFilterOption = fingerprint({
@@ -42,7 +46,7 @@ export const libraryFilterOption = fingerprint({
 export const recentlyDownloadedSort = definePatch({
   name: "Recently downloaded sort",
   description: "Adds 'Recently downloaded' (newest download first) to the library and sidebar sort menus.",
-  compatibleWith: [{ app: hydra, versions: ["4.1.6", "4.2.0"] }],
+  compatibleWith: [{ app: hydra, versions: ["4.1.6", "4.2.0", "4.4.0"] }],
   dependsOn: [useBundledUi, hydraLocales], // edits the bundled renderer (loaded only with useBundledUi) and uses locale keys
   execute(ctx) {
     const sort = ctx.match(librarySortSwitch);
@@ -58,7 +62,7 @@ export const recentlyDownloadedSort = definePatch({
     const entry = ctx.match(sidebarSortEntry);
     if (icon.file !== entry.file) throw new Error(`DownloadIcon (${icon.file}) and the sidebar sort menu (${entry.file}) are in different files`);
     entry.insertAfter(
-      `{ value: "recently_downloaded", label: ${entry.$T}("sort_recently_downloaded", { ns: "library" }), icon: ${entry.$JSX}.jsx(${icon.$ICON}, { size: 14 }) }`,
+      `{ value: "recently_downloaded", label: ${entry.$T}("sort_recently_downloaded", { ns: "library" }), icon: ${entry.$JSX}.jsx(globalThis.__revampDownloadIcon ??= ${icon.text}, { size: 14 }) }`,
     );
 
     ctx.match(sidebarSortSet).find('"recently_played"').insertAfter('"recently_downloaded"');

@@ -50,9 +50,11 @@ const searches: Record<string, string[]> = { "6:popularity": ["A"], "5:popularit
         edges: (searches[`${data.tags.length}:${data.sortBy}`] ?? []).map(game),
       }),
     },
-    revampGetSteamAppTags: async () => [10, 11, 12, 13, 14, 15],
-    revampGetSteamRecommendations: async () => recommendations,
     updateUserPreferences: async (preferences: unknown) => void saved.push(preferences),
+  },
+  revampSteam: {
+    getSteamAppTags: async () => [10, 11, 12, 13, 14, 15],
+    getSteamRecommendations: async () => recommendations,
   },
 };
 

@@ -1,4 +1,5 @@
 // Excerpt from Hydra 4.2.0 out/main/index.js (MIT, github.com/hydralauncher/hydra), trimmed for Revamp's patch tests.
+import log from 'electron-log';
 const PROTOCOL = "hydralauncher";
 if (process.defaultApp) {
     if (process.argv.length >= 2) {

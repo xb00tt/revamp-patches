@@ -7,6 +7,13 @@ export const protocolRegistration = fingerprint({
   pattern: "$APP.setAsDefaultProtocolClient($$$)",
 });
 
+/** Hydra's registration in an obfuscated main process (4.4.0 on), where the method name is hidden in a lookup table. */
+export const protocolRegistrationObfuscated = fingerprint({
+  name: "setAsDefaultProtocolClient calls (obfuscated)",
+  strings: ["process["],
+  pattern: "process[$DEFAULT_APP] ? process[$ARGV][$LENGTH] >= 2 && $APP[$SET]($PROTOCOL, process[$EXEC_PATH], [$$$]) : $APP[$SET]($PROTOCOL)",
+});
+
 export const sideBySideIdentity = definePatch({
   name: "Side-by-side identity",
   description:
@@ -25,7 +32,14 @@ export const sideBySideIdentity = definePatch({
     ctx.desktopEntry.Name = `${ctx.desktopEntry.Name ?? ctx.app.id} (Revamped)`;
     ctx.desktopEntry.StartupWMClass = id;
     if (ctx.options.claimLinks === false) {
-      for (const call of ctx.matchAll(protocolRegistration)) call.replace("false");
+      let calls;
+      try {
+        calls = ctx.matchAll(protocolRegistration);
+      } catch {
+        const m = ctx.match(protocolRegistrationObfuscated); // its error is the one reported: newer builds have this shape
+        calls = m.findAll(`${m.$APP}[${m.$SET}]($$$)`);
+      }
+      for (const call of calls) call.replace("false");
       delete ctx.desktopEntry.MimeType;
     }
   },

@@ -2,6 +2,11 @@
 
 Each `## <version>` section becomes the `changelog` field of `bundle.json` when that version is published.
 
+## 0.4.3
+
+- Hydra 4.4.0 is listed, so `revamp update` installs it without `--force`. Hydra 4.4.0 ships minified UI code and an obfuscated main process, so the patches now find the same places by their shape instead of by Hydra's own names and strings. Every patch applies to 4.1.6, 4.2.0 and 4.4.0. Hydra 4.3.0 is not listed.
+- The Steam data for the More like this rows now reaches the UI as its own `window.revampSteam` object instead of extra functions on Hydra's `window.electron`.
+
 ## 0.4.2
 
 - Hydra 4.2.0 and Heroic 2.22.4 are listed, so `revamp update` installs them without `--force`. Every patch applies to both unchanged. Hydra 4.1.6 and Heroic 2.22.3 stay listed.
