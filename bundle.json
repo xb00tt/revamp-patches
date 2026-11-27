@@ -1,9 +1,9 @@
 {
   "name": "Revamp official",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "minEngine": "0.2.0",
-  "created_at": "2026-11-07T14:42:52.163Z",
-  "changelog": "- Hydra 4.4.0 is listed, so `revamp update` installs it without `--force`. Hydra 4.4.0 ships minified UI code and an obfuscated main process, so the patches now find the same places by their shape instead of by Hydra's own names and strings. Every patch applies to 4.1.6, 4.2.0 and 4.4.0. Hydra 4.3.0 is not listed.\n- The Steam data for the More like this rows now reaches the UI as its own `window.revampSteam` object instead of extra functions on Hydra's `window.electron`.",
-  "download_url": "https://github.com/xb00tt/revamp-patches/releases/download/bundle-v0.4.3/official.mjs",
-  "sha256": "3f3b8f9fba56b1630a3c588ad8d21bf117360cdebb6365e62f42d135082fd950"
+  "created_at": "2026-11-27T13:58:40.681Z",
+  "changelog": "- Hydra 4.4.1 is listed, so `revamp update` installs it without `--force`. Every patch applies to it unchanged.\n- Hydra's Settings get a **Revamped** category above General, with every Revamped setting. The More like this checkboxes moved there from Content & gameplay.",
+  "download_url": "https://github.com/xb00tt/revamp-patches/releases/download/bundle-v0.4.4/official.mjs",
+  "sha256": "f6e99c4d129d2d3b26c27001352cd5c12dda2ae0c73c2078264e1b9dd96b2c93"
 }
