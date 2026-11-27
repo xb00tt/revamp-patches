@@ -1,6 +1,6 @@
 // Excerpts from Hydra 4.4.0 out/renderer/assets/index-B2nSRQJo.js (MIT, github.com/hydralauncher/hydra), minified;
 // each declaration of a comma list is its own statement here. Trimmed for Revamp's patch tests: the stock More like this
-// section, the internals it is built from, the catalogue's tag lookup, the Content preferences checkboxes of Settings and the root render. Library code is cut
+// section, the internals it is built from, the catalogue's tag lookup, the Settings page's categories, the Content preferences checkboxes of Settings and the root render. Library code is cut
 // down to its declaration; Big Picture's ContentSettingsSection items and its direct tag request are decoys.
 var s=Pat();
 var c=_0();
@@ -37,4 +37,6 @@ async function bpFilters(){return await Promise.allSettled([globalThis.window.el
 function _n({label:e,indeterminate:t=!1,id:n,...a}){const i=c.useId(),o=n??i;return null}
 function TAn(){const{t:e}=me("settings"),u=U1e(d),v=t;return s.jsxs("div",{className:"settings-context-panel",children:[s.jsxs("div",{className:"settings-context-panel__group",children:[s.jsx("h3",{children:e("content_preferences")}),s.jsx(_n,{label:e("autoplay_trailers_on_game_page"),checked:u.autoplayGameTrailers,onChange:()=>v({autoplayGameTrailers:!u.autoplayGameTrailers})}),s.jsx(_n,{label:e("persist_filters_and_sorting"),checked:u.persistFiltersAndSorting,onChange:()=>v({persistFiltersAndSorting:!u.persistFiltersAndSorting})})]})]})}
 function Iha(){const{t}=me("settings"),r=l,p=d;return[{id:"persist-filters-and-sorting",focusId:_r.persistFiltersAndSorting,label:t("persist_filters_and_sorting"),checked:r.persistFiltersAndSorting,onChange:P=>void p({persistFiltersAndSorting:P})}]}
+var a7t=Kt("SlidersIcon","octicon octicon-sliders",function(){return{}});
+function kTn(){const{t:e}=me("settings"),{userDetails:t}=zn(),{isFeatureEnabled:n,Feature:a}=eo(),i=n(a.Screenshots),o=c.useMemo(()=>[{id:"general",label:e("general"),icon:s.jsx(nm,{size:16})},{id:"download_sources",label:e("download_sources"),icon:s.jsx(ZT,{size:16})},{id:"content_gameplay",label:e("content_gameplay"),icon:s.jsx(am,{size:16})},{id:"big_picture",label:e("big_picture"),icon:s.jsx(cR,{size:16})}],[e,t,i]);return s.jsx(fSt,{children:s.jsx(hSt,{children:({currentCategoryId:r,setCurrentCategoryId:l,appearance:d})=>{const u=o.find(p=>p.id===r)??o[0],_=u.id,m=()=>_==="general"?s.jsx(bAn,{appearance:d}):_==="content_gameplay"?s.jsx(TAn,{}):s.jsx(lAn,{});return m()}})})}
 Oat.createRoot(document.getElementById("root")).render(s.jsx(E.StrictMode,{children:s.jsx(qke,{store:LXt,children:s.jsx(cBt,{})})}));

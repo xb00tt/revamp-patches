@@ -73,7 +73,7 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
       ["(internal patch #12: registry: Steam tags)", "applied", true],
       ["(internal patch #13: Similar games rows)", "applied", true],
       ["(internal patch #14: registry: settings)", "applied", true],
-      ["(internal patch #15: Similar games settings)", "applied", true],
+      ["(internal patch #15: Revamped settings)", "applied", true],
     ]);
   });
 
@@ -271,7 +271,7 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
     );
   });
 
-  const SETTINGS_SLOT = 'const __revampSimilarGamesSettings = globalThis.__revamp?.mount?.("hydra.similarGamesSettings", () => null) ?? (() => null);';
+  const SETTINGS_SLOT = 'const __revampSettingsPage = globalThis.__revamp?.mount?.("hydra.revampedSettings", () => null) ?? (() => null);';
   const MARKER = (name: string) => `(globalThis.__revamp ??= { registry: {}, mounts: {} }).registry.${name} = true;`;
 
   test("the registry patches name Hydra's internals just before the root render", () => {
@@ -291,19 +291,25 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
     assert.ok(code.indexOf(registry.at(-1)!) < code.indexOf("ReactDOM$1.createRoot("));
   });
 
-  test("both rows: markers and the settings slot before the root render, the stock section mounted once, the checkbox slot after the last Content preferences checkbox", () => {
+  test("both rows: markers and the Revamped settings page before the root render, the stock section mounted once, a Revamped category above General", () => {
     const out = job();
     const code = out.outputs.get(MORE_LIKE_THIS)!.toString();
     const root = code.indexOf("ReactDOM$1.createRoot(");
-    for (const piece of [MARKER("similarGamesSteam"), MARKER("similarGamesRevamped"), SETTINGS_SLOT]) {
+    for (const piece of [MARKER("similarGamesSteam"), MARKER("similarGamesRevamped"), MARKER("revampedSettings"), SETTINGS_SLOT]) {
       assert.ok(code.includes(piece), piece);
       assert.ok(code.indexOf(piece) < root, piece);
     }
     const mount = 'SimilarGames = globalThis.__revamp?.mount?.("hydra.similarGames", SimilarGames) ?? SimilarGames;';
     assert.equal(code.split(mount).length - 1, 1);
-    const slot = "), jsxRuntimeExports.jsx(__revampSimilarGamesSettings, {})";
-    assert.equal(code.split(slot).length - 1, 1);
-    assert.ok(code.indexOf(slot) > code.indexOf('label: t2("persist_filters_and_sorting"),'));
+    const category =
+      '...(globalThis.__revamp?.registry?.revampedSettings ? [{ id: "revamped", label: "Revamped", icon: jsxRuntimeExports.jsx(globalThis.__revampSlidersIcon ??= ' +
+      'createIconComponent("SlidersIcon", "octicon octicon-sliders", function() {\n  return {};\n}), { size: 16 }) }] : []), {\n        id: "general",';
+    assert.equal(code.split(category).length - 1, 1);
+    const panel = 'if (selectedCategoryId === "revamped") {\n        return jsxRuntimeExports.jsx(__revampSettingsPage, {});\n      }\nif (selectedCategoryId === "general") {';
+    assert.equal(code.split(panel).length - 1, 1);
+    // The checkboxes moved to the Revamped category: Content & gameplay is stock.
+    const content = (s: string) => s.slice(s.indexOf("function SettingsContextContentGameplay("), s.indexOf("function ContentSettingsSection("));
+    assert.equal(content(code), content(fixture("more-like-this-excerpt.js")));
     const decoy = (s: string) => s.slice(s.indexOf("function ContentSettingsSection("), s.indexOf("  return items;\n}"));
     assert.equal(decoy(code), decoy(fixture("more-like-this-excerpt.js")));
     // The Steam bridge: main process handlers after the electron-log import, window.revampSteam from the preload.
@@ -331,8 +337,8 @@ for (const [VERSION, CHUNK] of Object.entries(HYDRA)) describe(`Hydra ${VERSION}
     assert.equal(r("Recently added sort").status, "applied");
     assert.equal(out.outputs.get(MORE_LIKE_THIS)!.toString().includes('mount?.("hydra.similarGames",'), false);
     assert.equal(out.outputs.get(MORE_LIKE_THIS)!.toString().includes(".registry.similarGames"), false);
-    assert.equal(out.outputs.get(MORE_LIKE_THIS)!.toString().includes("__revampSimilarGamesSettings"), false);
-    assert.equal(r("(internal patch #15: Similar games settings)").status, "skipped");
+    // Revamped settings still runs (no row needs it to fail), but its category is listed only behind the markers.
+    assert.equal(out.outputs.get(MORE_LIKE_THIS)!.toString().includes(".registry.revampedSettings = true"), false);
   });
 
   test("a changed settings section skips both rows", () => {
@@ -442,7 +448,7 @@ describe("Hydra 4.4.0", () => {
     assert.equal(line("mnn"), fixture("locales-excerpt.js").split("\n").find((l) => l.startsWith("const mnn=")));
   });
 
-  test("the registry names the minified internals; the rows and the settings slot mount where 4.2.0's do", () => {
+  test("the registry names the minified internals; the rows and the Revamped settings mount where 4.2.0's do", () => {
     const code = text(MORE_LIKE_THIS);
     const REGISTRY = (entries: string) => `Object.assign((globalThis.__revamp ??= { registry: {}, mounts: {} }).registry, { ${entries} });`;
     for (const line of [
@@ -459,7 +465,9 @@ describe("Hydra 4.4.0", () => {
       assert.ok(code.indexOf(line) < code.indexOf("Oat.createRoot("), line);
     }
     assert.ok(code.includes('\nSSn = globalThis.__revamp?.mount?.("hydra.similarGames", SSn) ?? SSn;'));
-    assert.ok(code.includes("onChange:()=>v({persistFiltersAndSorting:!u.persistFiltersAndSorting})}), s.jsx(__revampSimilarGamesSettings, {})]})"));
+    assert.ok(code.includes('const u=o.find(p=>p.id===r)??o[0],_=u.id,m=()=>_ === "revamped" ? s.jsx(__revampSettingsPage, {}) : _==="general"?s.jsx(bAn,{appearance:d})'));
+    assert.ok(code.includes('o=c.useMemo(()=>[...(globalThis.__revamp?.registry?.revampedSettings ? [{ id: "revamped", label: "Revamped", icon: s.jsx(globalThis.__revampSlidersIcon ??= Kt("SlidersIcon","octicon octicon-sliders",function(){return{}}), { size: 16 }) }] : []), {id:"general",'));
+    assert.equal(code.includes("persistFiltersAndSorting})}), s.jsx("), false);
     const decoy = (s: string) => s.split("\n").find((l) => l.startsWith("function Iha("));
     assert.equal(decoy(code), decoy(fixture("more-like-this-excerpt.js")));
   });

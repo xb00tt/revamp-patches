@@ -25,7 +25,7 @@ npm run release                             # owner only: GitHub release bundle-
 
 - Always pass `--bundle dist/official.mjs` while developing. Without it the CLI uses the bundle pinned by the user's sources (and on a fresh home first seeds the default source, this repo's released `bundle.json`), so a rebuild changes nothing.
 - The integration tests use `dist/official.mjs` directly; `npm run test:integration` rebuilds it first.
-- The integration tests (`REVAMP_INTEGRATION=1`) reuse the real download cache `~/.cache/revamp/releases`: Hydra 4.1.6, 4.2.0 and 4.4.0, Heroic 2.22.3 and 2.22.4, and Hydra 4.0.6 forced as the deliberate mismatch. Without the cache that is about 920 MB of downloads. With it, a run takes a few minutes.
+- The integration tests (`REVAMP_INTEGRATION=1`) reuse the real download cache `~/.cache/revamp/releases`: Hydra 4.1.6, 4.2.0, 4.4.0 and 4.4.1, Heroic 2.22.3 and 2.22.4, and Hydra 4.0.6 forced as the deliberate mismatch. Without the cache that is about 1.1 GB of downloads. With it, a run takes a few minutes.
 - Passing tests install nothing for the owner: integration runs use temp homes.
 - The forced Hydra 4.0.6 test calls api.github.com unauthenticated (60 requests/hour); HTTP 403 there means wait and rerun.
 - Inspect a real build in a scratch dir: `dpkg-deb --fsys-tarfile <cached .deb> | tar -x`, then `extractFile` from `@electron/asar` (repo node_modules). Never eval app code; parse with acorn or regex.
@@ -56,6 +56,7 @@ A bundle release is `npm run release`, by the owner, by hand:
 - Registry patches (`src/hydra/registry.ts`) capture Hydra internals from the stock code that uses them. Each name is `resolve()`-checked as top-level, and they are assigned to `globalThis.__revamp.registry` just before the root render call.
 - Extension code reaches them only at call time through `@revamp-app/sdk/shims/*` and the extension's `app.ts`, because the extension loads before Hydra's module runs.
 - A feature patch routes a stock component through `mount()`: the extension's replacement renders inside an error boundary that falls back to the stock component.
+- Settings: the internal "Revamped settings" patch adds a Revamped category above General whose panel is the extension's `hydra.revampedSettings` mount. A patch with a Revamped setting depends on it and inserts `REVAMPED_SETTINGS_MARKER`, which is what lists the category; the setting itself goes in the extension's page.
 - `test/extension.test.ts` builds the extension and renders it with real React 18.3.1 (Hydra's version) through `react-test-renderer`.
 
 **Fingerprinting rules learned on real releases:**

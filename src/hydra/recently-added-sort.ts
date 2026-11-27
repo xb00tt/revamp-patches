@@ -18,7 +18,7 @@ const CALENDAR_16 =
 export const recentlyAddedSort = definePatch({
   name: "Recently added sort",
   description: "Adds 'Recently added' (newest first; games without an added date last) to the library and sidebar sort menus.",
-  compatibleWith: [{ app: hydra, versions: ["4.1.6", "4.2.0", "4.4.0"] }],
+  compatibleWith: [{ app: hydra, versions: ["4.1.6", "4.2.0", "4.4.0", "4.4.1"] }],
   dependsOn: [useBundledUi, hydraLocales],
   execute(ctx) {
     // Same five places as Recently downloaded sort. Inserts at the same spot keep patch order, and patches run in

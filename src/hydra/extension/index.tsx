@@ -4,9 +4,9 @@
 import { mount } from "@revamp-app/sdk/shims/mount";
 import { revamp } from "@revamp-app/sdk/shims/registry";
 import { SimilarGamesRows } from "./pages/game-details/similar-games/similar-games-rows.tsx";
-import { SimilarGamesSettings } from "./pages/settings/similar-games-settings.tsx";
+import { RevampedSettings } from "./pages/settings/revamped-settings.tsx";
 
 const root = revamp();
 root.mount ??= mount as (id: string, original: unknown) => unknown;
 root.mounts["hydra.similarGames"] = SimilarGamesRows;
-root.mounts["hydra.similarGamesSettings"] = SimilarGamesSettings;
+root.mounts["hydra.revampedSettings"] = RevampedSettings;

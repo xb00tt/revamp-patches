@@ -115,7 +115,7 @@ beforeEach(() => {
 test("the extension installs mount() and its stylesheet when it loads, before Hydra exists", () => {
   assert.equal(typeof revamp().mount, "function");
   assert.equal(typeof revamp().mounts["hydra.similarGames"], "function");
-  assert.equal(typeof revamp().mounts["hydra.similarGamesSettings"], "function");
+  assert.equal(typeof revamp().mounts["hydra.revampedSettings"], "function");
   assert.ok(styles[0].includes(".similar-games__caption"));
 });
 
@@ -172,7 +172,7 @@ test("Steam knowing no similar games shows the empty state", async () => {
 });
 
 async function renderSettings() {
-  const Settings = revamp().mount("hydra.similarGamesSettings", () => null) as React.FunctionComponent;
+  const Settings = revamp().mount("hydra.revampedSettings", () => null) as React.FunctionComponent;
   let renderer: ReturnType<typeof create> | undefined;
   await act(async () => {
     renderer = create(React.createElement(Settings));
@@ -180,9 +180,10 @@ async function renderSettings() {
   return renderer!.root;
 }
 
-test("the settings list one checkbox per patched row and save only their own key", async () => {
+test("the Revamped settings page lists one checkbox per patched row under its heading, and saves only their own key", async () => {
   Object.assign(revamp().registry, { similarGamesSteam: true });
   const root = await renderSettings();
+  assert.deepEqual(root.findAll((n) => n.type === "h3").map((h) => h.props.children), ["More like this"]);
   const boxes = () => root.findAll((n) => n.type === "checkbox");
   assert.deepEqual(boxes().map((b) => b.props.label), ["Show “More like this (Steam)” on game pages", "Show “More like this (Original)” on game pages"]);
   assert.deepEqual(boxes().map((b) => b.props.checked), [true, true]);
@@ -191,7 +192,7 @@ test("the settings list one checkbox per patched row and save only their own key
   assert.equal(boxes()[0].props.checked, false);
 });
 
-test("without a marker the settings render nothing", async () => {
+test("without a marker the Revamped settings page renders nothing", async () => {
   const root = await renderSettings();
   assert.equal(root.findAll((n) => n.type === "checkbox").length, 0);
 });

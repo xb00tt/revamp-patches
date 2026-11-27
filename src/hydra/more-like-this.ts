@@ -6,12 +6,11 @@ import {
   registerGameData,
   registerGamePage,
   registerLibrary,
-  registerSettings,
   registerSteamTags,
   rootRender,
-  settingsLastCheckbox,
   similarGamesComponent,
 } from "./registry.ts";
+import { REVAMPED_SETTINGS_MARKER, revampedSettings } from "./revamped-settings.ts";
 import { steamBridge } from "./steam-bridge.ts";
 
 /** Internal "Similar games rows": mounts the extension's rows over the stock section. */
@@ -26,23 +25,8 @@ export const similarGamesRows = definePatch({
   },
 });
 
-/** Internal "Similar games settings": the checkboxes slot after the last Content preferences checkbox. */
-export const similarGamesSettings = definePatch({
-  description: "Similar games settings",
-  dependsOn: [useBundledUi, hydraExtensionLoader, registerGamePage, registerSettings, registerLibrary],
-  execute(ctx) {
-    const box = ctx.match(settingsLastCheckbox);
-    const render = ctx.match(rootRender);
-    if (box.file !== render.file) throw new Error(`the settings checkboxes (${box.file}) are not in the renderer module (${render.file})`);
-    render.insertBefore(
-      'const __revampSimilarGamesSettings = globalThis.__revamp?.mount?.("hydra.similarGamesSettings", () => null) ?? (() => null);',
-    );
-    box.insertAfter(`${box.$JSX}.jsx(__revampSimilarGamesSettings, {})`);
-  },
-});
-
-const dependsOn = [useBundledUi, hydraExtensionLoader, steamBridge, similarGamesRows, similarGamesSettings];
-const compatibleWith = [{ app: hydra, versions: ["4.1.6", "4.2.0", "4.4.0"] }];
+const dependsOn = [useBundledUi, hydraExtensionLoader, steamBridge, similarGamesRows, revampedSettings];
+const compatibleWith = [{ app: hydra, versions: ["4.1.6", "4.2.0", "4.4.0", "4.4.1"] }];
 
 export const moreLikeThisSteam = definePatch({
   name: "More like this (Steam)",
@@ -51,7 +35,9 @@ export const moreLikeThisSteam = definePatch({
   compatibleWith,
   dependsOn,
   execute(ctx) {
-    ctx.match(rootRender).insertBefore("(globalThis.__revamp ??= { registry: {}, mounts: {} }).registry.similarGamesSteam = true;");
+    const render = ctx.match(rootRender);
+    render.insertBefore("(globalThis.__revamp ??= { registry: {}, mounts: {} }).registry.similarGamesSteam = true;");
+    render.insertBefore(REVAMPED_SETTINGS_MARKER);
   },
 });
 
@@ -62,6 +48,8 @@ export const moreLikeThisRevamped = definePatch({
   compatibleWith,
   dependsOn,
   execute(ctx) {
-    ctx.match(rootRender).insertBefore("(globalThis.__revamp ??= { registry: {}, mounts: {} }).registry.similarGamesRevamped = true;");
+    const render = ctx.match(rootRender);
+    render.insertBefore("(globalThis.__revamp ??= { registry: {}, mounts: {} }).registry.similarGamesRevamped = true;");
+    render.insertBefore(REVAMPED_SETTINGS_MARKER);
   },
 });

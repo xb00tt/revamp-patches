@@ -22,7 +22,7 @@ export const useBundledUi = definePatch({
   name: "Use the bundled UI",
   description:
     "Loads the UI that ships inside the release (the one Revamp patches) instead of the copy on Hydra's website, which can change without a release.",
-  compatibleWith: [{ app: hydra, versions: ["4.1.6", "4.2.0", "4.4.0"] }],
+  compatibleWith: [{ app: hydra, versions: ["4.1.6", "4.2.0", "4.4.0", "4.4.1"] }],
   execute(ctx) {
     let m;
     try {
