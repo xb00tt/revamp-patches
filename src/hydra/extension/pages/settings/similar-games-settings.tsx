@@ -4,7 +4,7 @@ import { CheckboxField, registryEntries, useAppSelector, useTranslation } from "
 import { patchedRows, ROW_PREFERENCES } from "../../rows.ts";
 import { similarGamesText } from "../../strings.ts";
 
-// One checkbox per patched row, listed in Hydra's Settings under the stock options.
+// One checkbox per patched row, in the Revamped category of Hydra's Settings.
 export function SimilarGamesSettings() {
   const preferences = useAppSelector((state) => state.userPreferences.value);
   const { i18n } = useTranslation("settings");

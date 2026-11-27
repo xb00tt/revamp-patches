@@ -17,8 +17,8 @@ const USE_SIMILAR_GAMES = ["const useSimilarGames = /* @__PURE__ */ __name((quer
 
 /**
  * Each listed Hydra version: the main process's local UI load once patched, and two slices that must stay stock (the
- * similar games hook, which the extension replaces at runtime only, and Big Picture's ContentSettingsSection). 4.4.0 is
- * minified (the renderer) and obfuscated (the main process), so its texts differ.
+ * similar games hook, which the extension replaces at runtime only, and Big Picture's ContentSettingsSection). 4.4.x is
+ * minified (the renderer) and obfuscated (the main process), with other names in every build, so its texts differ.
  */
 const HYDRA: Record<string, { localUi: string; untouched: Slice[] }> = {
   "4.1.6": {
@@ -40,6 +40,13 @@ const HYDRA: Record<string, { localUi: string; untouched: Slice[] }> = {
     untouched: [
       ["hAe=e=>{", "isEligible:m}}", "f857b5be6cb5b21c280158479212a61fb7f35b4ff6cef0f524e658801b2bfe7e"],
       ["function a0a({className:e}){", "onConfirm:f})]})}", "9fa16918bd4a14b7be52eda7b66d47f4d15a8088c5099dd30dbe190973e4aa9a"],
+    ],
+  },
+  "4.4.1": {
+    localUi: "process.env.ELECTRON_RENDERER_URL+'#/'+rt);else rs[b35(0x292e)](G[b35(0x44fe)](__dirname,b35(0x3023)), { hash: rt });",
+    untouched: [
+      ["oTe=e=>{", "isEligible:m}}", "725d9fa18f495088568683eb5d43f51605be548b7b97d9014e758fcc533814b0"],
+      ["function Kva({className:e}){", "onConfirm:f})]})}", "cb86ad288f16e735d29f3bb58b191ccf5385bfc873fa19e8eaf91f057b4799f1"],
     ],
   },
 };
@@ -84,7 +91,7 @@ for (const [version, { localUi, untouched }] of Object.entries(HYDRA)) {
           ["(internal patch #12: registry: Steam tags)", "applied"],
           ["(internal patch #13: Similar games rows)", "applied"],
           ["(internal patch #14: registry: settings)", "applied"],
-          ["(internal patch #15: Similar games settings)", "applied"],
+          ["(internal patch #15: Revamped settings)", "applied"],
         ],
       );
       if (cached) assert.ok(seconds < 60, `patching took ${seconds.toFixed(1)} s; expected seconds, not minutes`);
@@ -126,15 +133,17 @@ for (const [version, { localUi, untouched }] of Object.entries(HYDRA)) {
       assert.ok(html.includes('<script type="module" crossorigin src="./assets/revamp-hydra.js"></script>'));
       assert.ok(html.indexOf("./assets/revamp-hydra.js") < html.indexOf('<script type="module" crossorigin src="./assets/index-'));
       assert.equal(patched[0].split("Object.assign((globalThis.__revamp ??= { registry: {}, mounts: {} }).registry, {").length, 6);
-      assert.ok(/registry, \{ [^\n]* \}\);\nconst __revampSimilarGamesSettings [^\n]*\n(\(globalThis[^\n]*registry\.similarGames\w+ = true;\n){2}[\w$]+\.createRoot\(document\.getElementById\("root"\)\)/.test(patched[0]));
+      assert.ok(/registry, \{ [^\n]* \}\);\nconst __revampSettingsPage [^\n]*\n(\(globalThis[^\n]*registry\.similarGames\w+ = true;\n\(globalThis[^\n]*registry\.revampedSettings = true;\n){2}[\w$]+\.createRoot\(document\.getElementById\("root"\)\)/.test(patched[0]));
       assert.equal(patched[0].match(/\n([\w$]+) = globalThis\.__revamp\?\.mount\?\.\("hydra\.similarGames", \1\) \?\? \1;/g)?.length, 1);
 
-      // The Steam bridge runs in the main process and the preload; the settings slot is mounted once.
+      // The Steam bridge runs in the main process and the preload.
       assert.equal(main.split("__revampSteamBridge.registerSteamBridge((name, listener) => __revampIpcMain.handle(name, listener), ").length, 2);
       const preload = extractFile(asar, "out/preload/index.mjs").toString();
       assert.equal(preload.split('.exposeInMainWorld("revampSteam", {').length, 2);
       assert.ok(preload.includes('.invoke("revamp:getSteamRecommendations", objectId)'));
-      assert.equal(patched[0].split(".jsx(__revampSimilarGamesSettings, {})").length, 2);
+      // Settings: a Revamped category above General whose panel is the extension's page.
+      assert.equal(patched[0].split('[{ id: "revamped", label: "Revamped", icon: ').length, 2);
+      assert.equal(patched[0].split(".jsx(__revampSettingsPage, {})").length, 2);
       assert.ok(patched[0].includes("similarGamesSteam = true") && patched[0].includes("similarGamesRevamped = true"));
 
       // The stock similar games hook and Big Picture's settings are untouched.

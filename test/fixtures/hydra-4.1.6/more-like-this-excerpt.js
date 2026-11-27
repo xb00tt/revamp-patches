@@ -1,7 +1,8 @@
 // Excerpts from Hydra 4.1.6 out/renderer/assets/index-Cpo9haoY.js (MIT, github.com/hydralauncher/hydra), trimmed for
-// Revamp's More like this tests: the stock section, the internals it is built from, the catalogue's tag lookup and the
-// root render, and the Content preferences checkboxes of Settings (Big Picture's ContentSettingsSection is a decoy). Library
-// code is cut down to its declaration; Big Picture's direct tag request is a decoy too.
+// Revamp's More like this tests: the stock section, the internals it is built from, the catalogue's tag lookup, the
+// root render, the Settings page's categories and panel choice, and the Content preferences checkboxes of Settings
+// (Big Picture's ContentSettingsSection is a decoy). Library code is cut down to its declaration; Big Picture's direct
+// tag request is a decoy too.
 var jsxRuntimeExports = requireJsxRuntime();
 var reactExports$1 = requireReact$1();
 const React = /* @__PURE__ */ getDefaultExportFromCjs$1(reactExports$1);
@@ -321,6 +322,52 @@ function ContentSettingsSection({ className }) {
       }
   ];
   return items;
+}
+var SlidersIcon = /* @__PURE__ */ createIconComponent("SlidersIcon", "octicon octicon-sliders", function() {
+  return {};
+});
+function Settings$1() {
+  const { t: t2 } = useTranslation("settings");
+  const { userDetails } = useUserDetails$1();
+  const categories = reactExports$1.useMemo(
+    () => [
+      {
+        id: "general",
+        label: t2("general"),
+        icon: /* @__PURE__ */ jsxRuntimeExports.jsx(GearIcon, { size: 16 })
+      },
+      {
+        id: "download_sources",
+        label: t2("download_sources"),
+        icon: /* @__PURE__ */ jsxRuntimeExports.jsx(LinkIcon, { size: 16 })
+      },
+      {
+        id: "content_gameplay",
+        label: t2("content_gameplay"),
+        icon: /* @__PURE__ */ jsxRuntimeExports.jsx(PlayIcon, { size: 16 })
+      },
+      {
+        id: "big_picture",
+        label: t2("big_picture"),
+        icon: /* @__PURE__ */ jsxRuntimeExports.jsx(VideoIcon, { size: 16 })
+      }
+    ],
+    [t2, userDetails]
+  );
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsContextProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsContextConsumer, { children: /* @__PURE__ */ __name(({ currentCategoryId, setCurrentCategoryId, appearance }) => {
+    const currentCategory = categories.find((category) => category.id === currentCategoryId) ?? categories[0];
+    const selectedCategoryId = currentCategory.id;
+    const renderCategory = /* @__PURE__ */ __name(() => {
+      if (selectedCategoryId === "general") {
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsContextGeneral, { appearance });
+      }
+      if (selectedCategoryId === "content_gameplay") {
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsContextContentGameplay, {});
+      }
+      return /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsContextAccountPrivacy, {});
+    }, "renderCategory");
+    return renderCategory();
+  }, "children") }) });
 }
 ReactDOM$1.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(React.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Provider_default, { store, children: /* @__PURE__ */ jsxRuntimeExports.jsx(App$1, {}) }) })
